@@ -1,25 +1,31 @@
-# HSI (Hyperspectral Image) Super-Resolution Configurations
+# HSI (Hyperspectral Image) Processing Configurations
 
-This directory contains configuration templates specifically designed for hyperspectral image (HSI) super-resolution experiments using BasicSR framework.
+This directory contains configuration templates specifically designed for hyperspectral image (HSI) processing experiments using BasicSR framework, including super-resolution, denoising, and inpainting tasks.
 
 ## Directory Structure
 
 ```
 options/
 ├── train/HSI/
-│   └── train_HSI_SRResNet_x4.yml    # Training configuration template
+│   ├── train_HSI_SRResNet_x4.yml           # Super-resolution training configuration
+│   ├── train_HSI_Denoising_SRResNet.yml    # Denoising training configuration
+│   └── train_HSI_Inpainting_SRResNet.yml   # Inpainting training configuration
 └── test/HSI/
-    └── test_HSI_SRResNet_x4.yml     # Testing configuration template
+    ├── test_HSI_SRResNet_x4.yml           # Super-resolution testing configuration
+    ├── test_HSI_Denoising_SRResNet.yml    # Denoising testing configuration
+    └── test_HSI_Inpainting_SRResNet.yml   # Inpainting testing configuration
 ```
 
 ## Features
 
 ### HSI-Specific Modifications
 
-1. **Dataset Type**: Uses `HSIDataset` class for handling `.mat` and `.npy` files
+1. **Multi-Task Dataset Types**: Uses `HSIDataset`, `HSIDenoisingDataset`, and `HSIInpaintingDataset` classes
 2. **Network Configuration**: Configurable input/output channels for different spectral bands
 3. **Memory Optimization**: Smaller batch sizes and patch sizes for HSI data
 4. **Comprehensive Metrics**: Includes PSNR, SSIM, SAM, ERGAS, and RMSE
+5. **Flexible Noise Generation**: On-the-fly noise generation for denoising tasks
+6. **Dynamic Mask Generation**: Runtime mask creation for inpainting tasks
 
 ### Supported Metrics
 
@@ -33,11 +39,17 @@ options/
 
 ### 1. Prepare Your Dataset
 
-Follow the [HSI Dataset Preparation Guide](../../docs/HSI_DatasetPreparation.md) to organize your data.
+Follow the [HSI Dataset Preparation Guide](../../docs/HSI_DatasetPreparation.md) to organize your data according to your task:
+
+- **Super-resolution**: HR and LR folder structure
+- **Denoising**: Clean images (noisy images optional, can generate on-the-fly)
+- **Inpainting**: Complete images (masks optional, can generate on-the-fly)
 
 ### 2. Configure for Your Dataset
 
-**Training Configuration** (`train_HSI_SRResNet_x4.yml`):
+Choose the appropriate configuration file and update the parameters:
+
+#### Super-Resolution Configuration (`train_HSI_SRResNet_x4.yml`):
 
 ```yaml
 # Update dataset paths
@@ -50,35 +62,90 @@ datasets:
 network_g:
   num_in_ch: 31
   num_out_ch: 31
+  upscale: 4
 ```
 
-**Testing Configuration** (`test_HSI_SRResNet_x4.yml`):
+#### Denoising Configuration (`train_HSI_Denoising_SRResNet.yml`):
 
 ```yaml
 # Update dataset paths
 datasets:
-  test_1:
-    dataroot_gt: datasets/your_hsi_dataset/test/HR
-    dataroot_lq: datasets/your_hsi_dataset/test/LR
+  train:
+    dataroot_gt: datasets/your_hsi_dataset/clean
+    add_noise_to_gt: true      # Generate noise on-the-fly
+    noise_type: gaussian       # gaussian, poisson, mixed
+    noise_range: [5, 50]       # Noise level range
 
-# Set model path
-path:
-  pretrain_network_g: experiments/pretrained_models/your_model.pth
+# Set spectral channels
+network_g:
+  num_in_ch: 31
+  num_out_ch: 31
+  upscale: 1                   # No upscaling for denoising
+```
+
+#### Inpainting Configuration (`train_HSI_Inpainting_SRResNet.yml`):
+
+```yaml
+# Update dataset paths
+datasets:
+  train:
+    dataroot_gt: datasets/your_hsi_dataset/complete
+    generate_mask: true        # Generate masks on-the-fly
+    mask_type: random_rect     # random_rect, random_irregular
+    mask_ratio: [0.1, 0.3]     # 10-30% of image area
+
+# Set spectral channels
+network_g:
+  num_in_ch: 31
+  num_out_ch: 31
+  upscale: 1                   # No upscaling for inpainting
 ```
 
 ### 3. Train the Model
 
+Choose the appropriate training command:
+
+#### Super-Resolution:
 ```bash
 PYTHONPATH="./:${PYTHONPATH}" CUDA_VISIBLE_DEVICES=0 python basicsr/train.py \
     -opt options/train/HSI/train_HSI_SRResNet_x4.yml \
     --auto_resume
 ```
 
+#### Denoising:
+```bash
+PYTHONPATH="./:${PYTHONPATH}" CUDA_VISIBLE_DEVICES=0 python basicsr/train.py \
+    -opt options/train/HSI/train_HSI_Denoising_SRResNet.yml \
+    --auto_resume
+```
+
+#### Inpainting:
+```bash
+PYTHONPATH="./:${PYTHONPATH}" CUDA_VISIBLE_DEVICES=0 python basicsr/train.py \
+    -opt options/train/HSI/train_HSI_Inpainting_SRResNet.yml \
+    --auto_resume
+```
+
 ### 4. Test the Model
 
+Choose the appropriate testing command:
+
+#### Super-Resolution:
 ```bash
 PYTHONPATH="./:${PYTHONPATH}" CUDA_VISIBLE_DEVICES=0 python basicsr/test.py \
     -opt options/test/HSI/test_HSI_SRResNet_x4.yml
+```
+
+#### Denoising:
+```bash
+PYTHONPATH="./:${PYTHONPATH}" CUDA_VISIBLE_DEVICES=0 python basicsr/test.py \
+    -opt options/test/HSI/test_HSI_Denoising_SRResNet.yml
+```
+
+#### Inpainting:
+```bash
+PYTHONPATH="./:${PYTHONPATH}" CUDA_VISIBLE_DEVICES=0 python basicsr/test.py \
+    -opt options/test/HSI/test_HSI_Inpainting_SRResNet.yml
 ```
 
 ## Configuration Parameters
