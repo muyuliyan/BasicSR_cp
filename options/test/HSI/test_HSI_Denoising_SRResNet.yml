@@ -1,0 +1,65 @@
+# HSI Denoising Testing Configuration
+# Hyperspectral Image Denoising using SRResNet architecture
+
+# ----------- Commands for running
+# ----------- Single GPU
+# PYTHONPATH="./:${PYTHONPATH}" CUDA_VISIBLE_DEVICES=0 python basicsr/test.py -opt options/test/HSI/test_HSI_Denoising_SRResNet.yml
+
+name: HSI_Denoising_SRResNet_test
+model_type: SRModel
+scale: 1  # For denoising, scale is 1
+num_gpu: 1
+
+datasets:
+  test_1:
+    name: HSI_Denoising_Test
+    type: HSIDenoisingDataset
+    dataroot_gt: datasets/your_hsi_dataset/test/clean  # Replace with your test clean path
+    dataroot_lq: datasets/your_hsi_dataset/test/noisy  # Replace with your test noisy path (or leave empty for generated noise)
+    io_backend:
+      type: disk
+    
+    # For testing with pre-computed noisy data
+    add_noise_to_gt: false  # Set to true if you want to generate noise on-the-fly
+    noise_type: gaussian
+    noise_range: [25, 25]  # Fixed noise level for testing
+
+# network structures
+network_g:
+  type: MSRResNet
+  num_in_ch: 128  # Change this to match your HSI spectral channels
+  num_out_ch: 128  # Should match num_in_ch
+  num_feat: 64
+  num_block: 16
+  upscale: 1
+
+# path
+path:
+  pretrain_network_g: experiments/pretrained_models/your_hsi_denoising_model.pth  # Replace with your trained model path
+  param_key_g: params
+  strict_load_g: true
+
+# validation settings
+val:
+  save_img: true
+  suffix: ~  # add suffix to saved images, if None, use exp name
+
+  metrics:
+    psnr: # Peak Signal-to-Noise Ratio
+      type: calculate_psnr
+      crop_border: 4
+      test_y_channel: false
+      better: higher
+    ssim: # Structural Similarity Index
+      type: calculate_ssim
+      crop_border: 4
+      test_y_channel: false
+      better: higher
+    sam: # Spectral Angle Mapper (HSI-specific)
+      type: calculate_sam
+      crop_border: 4
+      better: lower
+    rmse: # Root Mean Square Error
+      type: calculate_rmse
+      crop_border: 4
+      better: lower

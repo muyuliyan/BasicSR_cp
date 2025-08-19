@@ -3,10 +3,11 @@ import torch
 from torch.utils import data
 import os
 import random
-from basicsr.utils import FileClient, imfrombytes
+from basicsr.utils.registry import DATASET_REGISTRY
 
 import scipy.io as sio  # 用于读取 .mat
 
+@DATASET_REGISTRY.register()
 class HSIDataset(data.Dataset):
     """HSI Dataset for SR tasks.
     Assume HR/LR data are stored as .mat or .npy, shape [H, W, C].
