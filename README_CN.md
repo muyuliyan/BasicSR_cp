@@ -91,6 +91,13 @@ For detailed instructions refer to [docs/INSTALL.md](docs/INSTALL.md).
 
 参见 [project boards](https://github.com/xinntao/BasicSR/projects).
 
+## :rocket: 快速上手指南
+
+- **🎯 文档导航中心**, 参见 **[文档导航中心_CN.md](docs/文档导航中心_CN.md)** - 根据需求快速找到对应文档
+- **📖 全面使用指南**, 参见 **[BasicSR_使用指南_CN.md](docs/BasicSR_使用指南_CN.md)** - 涵盖超分辨率、去噪、修复任务的完整流程
+- **🚀 一键配置指南**, 参见 **[常见任务一键配置指南_CN.md](docs/常见任务一键配置指南_CN.md)** - 三种常见任务的详细配置步骤
+- **⚡ 任务配置快速参考**, 参见 **[任务配置快速参考_CN.md](docs/任务配置快速参考_CN.md)** - 各种任务的配置模板
+
 ## :turtle: 数据准备
 
 - 数据准备步骤, 参见 **[DatasetPreparation_CN.md](docs/DatasetPreparation_CN.md)**.
@@ -99,7 +106,7 @@ For detailed instructions refer to [docs/INSTALL.md](docs/INSTALL.md).
 ## :computer: 训练和测试
 
 - **训练和测试的命令**, 参见 **[TrainTest_CN.md](docs/TrainTest_CN.md)**.
-- **Options/Configs**配置文件的说明, 参见 [Config_CN.md](docs/Config_CN.md).
+- **Options/Configs**配置文件的说明, 参见 [Config.md](docs/Config.md).
 - **Logging**日志系统的说明, 参见 [Logging_CN.md](docs/Logging_CN.md).
 
 ## :european_castle: 模型库和基准
