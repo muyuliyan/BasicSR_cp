@@ -91,6 +91,9 @@ PYTHONPATH="./:${PYTHONPATH}" python basicsr/train.py -opt options/train/MRI/tra
 
 ### 4. **Test & Evaluate**
 ```bash
+# Test installation
+python test_mri_installation.py
+
 # Test OASIS model
 PYTHONPATH="./:${PYTHONPATH}" python basicsr/test.py -opt options/test/MRI/test_OASIS_SRResNet_x4.yml
 
