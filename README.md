@@ -17,7 +17,7 @@
 
 <div align="center">
 
-⚡[**HowTo**](#-HOWTOs) **|** 🔧[**Installation**](docs/INSTALL.md) **|** 💻[**Training Commands**](docs/TrainTest.md) **|** 🐢[**DatasetPrepare**](docs/DatasetPreparation.md) **|** 🏰[**Model Zoo**](docs/ModelZoo.md)
+⚡[**MRI Quick Start**](MRI_QuickStart.md) **|** 🔧[**Installation**](docs/INSTALL.md) **|** 💻[**Training Commands**](docs/TrainTest.md) **|** 🏥[**MRI Dataset Prep**](docs/MRI_DatasetPreparation.md) **|** 🏰[**Model Zoo**](docs/ModelZoo.md)
 
 📕[**中文解读文档**](https://github.com/XPixelGroup/BasicSR-docs) **|** 📊 [**Plot scripts**](scripts/plot) **|** 📝[Introduction](docs/introduction.md) **|** <a href="https://github.com/XPixelGroup/BasicSR/tree/master/colab"><img src="https://colab.research.google.com/assets/colab-badge.svg" height="18" alt="google colab logo"></a> **|** ⏳[TODO List](https://github.com/xinntao/BasicSR/projects) **|** ❓[FAQ](docs/FAQ.md)
 </div>
@@ -28,20 +28,77 @@
 
 ---
 
-BasicSR (**Basic** **S**uper **R**estoration) is an open-source **image and video restoration** toolbox based on PyTorch, such as super-resolution, denoise, deblurring, JPEG artifacts removal, *etc*.<br>
-BasicSR (**Basic** **S**uper **R**estoration) 是一个基于 PyTorch 的开源 图像视频复原工具箱, 比如 超分辨率, 去噪, 去模糊, 去 JPEG 压缩噪声等.
+BasicSR (**Basic** **S**uper **R**estoration) is an open-source **medical image restoration** toolbox based on PyTorch, specifically optimized for **MRI (Magnetic Resonance Imaging)** super-resolution.<br>
+BasicSR (**Basic** **S**uper **R**estoration) 是一个基于 PyTorch 的开源 **医学图像复原工具箱**, 专门针对 **MRI（磁共振成像）超分辨率** 进行优化。
 
-🚩 **New Features/Updates**
+## 🏥 MRI-Specific Features
 
-- ✅ July 26, 2022. Add plot scripts 📊[Plot](scripts/plot).
-- ✅ May 9, 2022. BasicSR joins [XPixel](http://xpixel.group/).
-- ✅ Oct 5, 2021. Add **ECBSR training and testing** codes: [ECBSR](https://github.com/xindongzhang/ECBSR).
-  > ACMMM21: Edge-oriented Convolution Block for Real-time Super Resolution on Mobile Devices
-- ✅ Sep 2, 2021. Add **SwinIR training and testing** codes: [SwinIR](https://github.com/JingyunLiang/SwinIR) by [Jingyun Liang](https://github.com/JingyunLiang). More details are in [HOWTOs.md](docs/HOWTOs.md#how-to-train-swinir-sr)
-- ✅ Aug 5, 2021. Add NIQE, which produces the same results as MATLAB (both are 5.7296 for tests/data/baboon.png).
-- ✅ July 31, 2021. Add **bi-directional video super-resolution** codes: [**BasicVSR** and IconVSR](https://arxiv.org/abs/2012.02181).
-  > CVPR21: BasicVSR: The Search for Essential Components in Video Super-Resolution and Beyond
-- **[More](docs/history_updates.md)**
+- **📄 Medical Format Support**: NIfTI (.nii/.nii.gz), NumPy (.npy), MATLAB (.mat)
+- **🧠 OASIS Dataset**: Optimized for brain MRI super-resolution
+- **💖 MM-WHS Dataset**: Optimized for cardiac MRI super-resolution  
+- **🔬 Robust Normalization**: Percentile-based clipping + [0,1] scaling
+- **📐 3D to 2D Conversion**: Automatic slice extraction from 3D volumes
+- **⚡ Memory Efficient**: Single-channel processing vs multi-spectral imaging
+
+🚩 **MRI Updates & Features**
+
+- ✅ **2024**: Complete transformation to **MRI medical image super-resolution**
+- ✅ **OASIS Dataset Support**: Brain MRI super-resolution with optimized normalization
+- ✅ **MM-WHS Dataset Support**: Cardiac MRI super-resolution  
+- ✅ **Medical Format Support**: NIfTI, NumPy, MATLAB formats
+- ✅ **3D Volume Handling**: Automatic 3D→2D slice extraction
+- ✅ **Single-Channel Optimization**: Efficient grayscale MRI processing
+- ✅ **Robust Normalization**: Percentile-based clipping for medical images
+
+---
+
+## 🚀 MRI Quick Start
+
+### 1. **Installation & Dependencies**
+```bash
+git clone https://github.com/muyuliyan/BasicSR_cp.git
+cd BasicSR_cp
+pip install -r requirements.txt
+
+# For medical imaging support
+pip install nibabel  # NIfTI format support
+```
+
+### 2. **Prepare MRI Dataset**
+
+#### OASIS Brain MRI:
+```bash
+mkdir -p datasets/OASIS/{train,val,test}/{HR,LR}
+# Copy your .nii brain MRI files to HR folders
+python scripts/mri_data_preparation.py --input datasets/OASIS/train/HR --output datasets/OASIS/train/LR --scale 4 --extract-2d
+```
+
+#### MM-WHS Cardiac MRI:
+```bash
+mkdir -p datasets/MM-WHS/{train,val,test}/{HR,LR}  
+# Copy your cardiac MRI files to HR folders
+python scripts/mri_data_preparation.py --input datasets/MM-WHS/train/HR --output datasets/MM-WHS/train/LR --scale 4 --extract-2d
+```
+
+### 3. **Train MRI Super-Resolution Model**
+```bash
+# Train OASIS brain MRI model
+PYTHONPATH="./:${PYTHONPATH}" python basicsr/train.py -opt options/train/MRI/train_OASIS_SRResNet_x4.yml --auto_resume
+
+# Train MM-WHS cardiac MRI model  
+PYTHONPATH="./:${PYTHONPATH}" python basicsr/train.py -opt options/train/MRI/train_MMWHS_SRResNet_x4.yml --auto_resume
+```
+
+### 4. **Test & Evaluate**
+```bash
+# Test OASIS model
+PYTHONPATH="./:${PYTHONPATH}" python basicsr/test.py -opt options/test/MRI/test_OASIS_SRResNet_x4.yml
+
+# Test MM-WHS model
+PYTHONPATH="./:${PYTHONPATH}" python basicsr/test.py -opt options/test/MRI/test_MMWHS_SRResNet_x4.yml
+```
+
+📖 **Full Documentation**: [MRI Quick Start Guide](MRI_QuickStart.md) | [MRI Dataset Preparation](docs/MRI_DatasetPreparation.md)
 
 ---
 
