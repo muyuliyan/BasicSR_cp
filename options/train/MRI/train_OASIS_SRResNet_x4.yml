@@ -1,0 +1,130 @@
+# MRI Super-Resolution Training Configuration for OASIS Dataset
+# OASIS (Open Access Series of Imaging Studies) - Brain MRI Dataset
+# Modified SRResNet architecture for MRI single-channel processing
+
+# ----------- Commands for running
+# ----------- Single GPU with auto_resume
+# PYTHONPATH="./:${PYTHONPATH}" CUDA_VISIBLE_DEVICES=0 python basicsr/train.py -opt options/train/MRI/train_OASIS_SRResNet_x4.yml --auto_resume
+
+# general settings
+name: OASIS_SRResNet_x4_f64b16
+model_type: SRModel
+scale: 4
+num_gpu: 1  # set num_gpu: 0 for cpu mode
+manual_seed: 0
+
+# dataset and data loader settings
+datasets:
+  train:
+    name: OASIS_Train
+    type: OASISDataset  # Use OASIS-specific dataset
+    dataroot_gt: datasets/OASIS/train/HR  # Replace with your OASIS HR dataset path
+    dataroot_lq: datasets/OASIS/train/LR  # Replace with your OASIS LR dataset path
+    filename_tmpl: '{}'
+    io_backend:
+      type: disk
+
+    # OASIS-specific settings
+    gt_size: 128  # Patch size for training
+    use_hflip: true
+    use_rot: true
+    
+    # MRI normalization settings
+    normalize_to_01: true
+    clip_percentiles: [2, 98]  # Conservative percentile clipping for brain MRI
+    slice_axis: 2  # Axial slices (default)
+    extract_2d_slices: true
+    phase: train
+
+    # data loader
+    num_worker_per_gpu: 4
+    batch_size_per_gpu: 16  # Can be larger than HSI due to single channel
+    dataset_enlarge_ratio: 100
+    prefetch_mode: ~
+
+  val:
+    name: OASIS_Val
+    type: OASISDataset
+    dataroot_gt: datasets/OASIS/val/HR  # Replace with your validation HR path
+    dataroot_lq: datasets/OASIS/val/LR  # Replace with your validation LR path
+    filename_tmpl: '{}'
+    io_backend:
+      type: disk
+    
+    # MRI normalization settings (same as train)
+    normalize_to_01: true
+    clip_percentiles: [2, 98]
+    slice_axis: 2
+    extract_2d_slices: true
+    phase: val
+
+# network structures
+network_g:
+  type: MSRResNet
+  num_in_ch: 1   # Single-channel MRI (grayscale)
+  num_out_ch: 1  # Single-channel output
+  num_feat: 64
+  num_block: 16
+  upscale: 4
+
+# path
+path:
+  pretrain_network_g: ~
+  param_key_g: params
+  strict_load_g: true
+  resume_state: ~
+
+# training settings
+train:
+  ema_decay: 0.999
+  optim_g:
+    type: Adam
+    lr: !!float 2e-4  # Standard learning rate for medical images
+    weight_decay: 0
+    betas: [0.9, 0.99]
+
+  scheduler:
+    type: CosineAnnealingRestartLR
+    periods: [250000, 250000, 250000, 250000]
+    restart_weights: [1, 1, 1, 1]
+    eta_min: !!float 1e-7
+
+  total_iter: 500000
+  warmup_iter: -1  # no warm up
+
+  # losses
+  pixel_opt:
+    type: L1Loss
+    loss_weight: 1.0
+    reduction: mean
+
+# validation settings
+val:
+  val_freq: !!float 5e3
+  save_img: true  # Save validation images for medical analysis
+
+  metrics:
+    psnr: # Peak Signal-to-Noise Ratio
+      type: calculate_psnr
+      crop_border: 4
+      test_y_channel: false
+      better: higher
+    ssim: # Structural Similarity Index
+      type: calculate_ssim
+      crop_border: 4
+      test_y_channel: false
+      better: higher
+
+# logging settings
+logger:
+  print_freq: 100
+  save_checkpoint_freq: !!float 5e3
+  use_tb_logger: true
+  wandb:
+    project: MRI_OASIS_SuperResolution
+    resume_id: ~
+
+# dist training settings
+dist_params:
+  backend: nccl
+  port: 29500

@@ -1,0 +1,62 @@
+# MRI Super-Resolution Testing Configuration for MM-WHS Dataset
+# Test trained models on MM-WHS cardiac MRI data
+
+# ----------- Commands for running
+# PYTHONPATH="./:${PYTHONPATH}" CUDA_VISIBLE_DEVICES=0 python basicsr/test.py -opt options/test/MRI/test_MMWHS_SRResNet_x4.yml
+
+name: MMWHS_SRResNet_x4_test
+model_type: SRModel
+scale: 4
+num_gpu: 1
+
+datasets:
+  test_1:
+    name: MMWHS_Test
+    type: MMWHSDataset
+    dataroot_gt: datasets/MM-WHS/test/HR
+    dataroot_lq: datasets/MM-WHS/test/LR
+    filename_tmpl: '{}'
+    io_backend:
+      type: disk
+    
+    # MRI normalization settings
+    normalize_to_01: true
+    clip_percentiles: [1, 99]
+    slice_axis: 2
+    extract_2d_slices: true
+    phase: test
+
+# network structures
+network_g:
+  type: MSRResNet
+  num_in_ch: 1   # Single-channel MRI
+  num_out_ch: 1  # Single-channel output
+  num_feat: 64
+  num_block: 16
+  upscale: 4
+
+# path
+path:
+  pretrain_network_g: experiments/pretrained_models/MMWHS_SRResNet_x4.pth  # Path to trained model
+  param_key_g: params_ema
+  strict_load_g: true
+
+# validation settings
+val:
+  save_img: true
+  suffix: ~  # add suffix to saved images, if None, use exp name
+  grids: false
+  crop_size: ~
+  max_minibatch: 1
+
+  metrics:
+    psnr: # Peak Signal-to-Noise Ratio
+      type: calculate_psnr
+      crop_border: 4
+      test_y_channel: false
+      better: higher
+    ssim: # Structural Similarity Index
+      type: calculate_ssim
+      crop_border: 4
+      test_y_channel: false
+      better: higher
